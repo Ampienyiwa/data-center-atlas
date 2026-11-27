@@ -219,11 +219,7 @@ footer a { color: var(--link); }
     </div>
 
     <div class="stage">
-      <div class="mapbox" style="background: var(--bg); flex-direction: column;">
-        <div style="font-size: 48px; margin-bottom: 10px;">🗺️</div>
-        <p style="margin: 0;">County choropleth map</p>
-        <p style="margin: 8px 0 0; font-size: 11px;">Full version: Interactive map showing counties colored by policy type, with timeline control and hover details.</p>
-      </div>
+      <div id="m-statemap" class="mapbox" style="background: var(--bg); flex-direction: column; padding: 20px;"></div>
       <aside class="panel" style="max-height: none;">
         <h2>Recent actions</h2>
         <p class="sub">All local policies organized by state</p>
@@ -527,6 +523,94 @@ showView(location.hash.slice(1) || 'restrictions');
   document.getElementById('m-c-mor').textContent = `(${typeCounts.Moratorium})`;
   document.getElementById('m-c-ban').textContent = `(${typeCounts.Ban})`;
   document.getElementById('m-c-zone').textContent = `(${typeCounts['Zoning & siting rules']})`;
+
+  // Render state map
+  function renderStateMap() {
+    const mapDiv = document.getElementById('m-statemap');
+    if (!mapDiv) return;
+
+    const US_STATES = [
+      ['AL', 'Alabama', 32, 36], ['AK', 'Alaska', 0, 2], ['AZ', 'Arizona', 32, 24], ['AR', 'Arkansas', 24, 36],
+      ['CA', 'California', 0, 48], ['CO', 'Colorado', 32, 18], ['CT', 'Connecticut', 60, 54], ['DE', 'Delaware', 56, 54],
+      ['FL', 'Florida', 48, 60], ['GA', 'Georgia', 48, 36], ['HI', 'Hawaii', 8, 72], ['ID', 'Idaho', 16, 12],
+      ['IL', 'Illinois', 48, 24], ['IN', 'Indiana', 52, 24], ['IA', 'Iowa', 48, 18], ['KS', 'Kansas', 40, 24],
+      ['KY', 'Kentucky', 56, 30], ['LA', 'Louisiana', 32, 48], ['ME', 'Maine', 68, 6], ['MD', 'Maryland', 60, 48],
+      ['MA', 'Massachusetts', 64, 54], ['MI', 'Michigan', 56, 18], ['MN', 'Minnesota', 48, 6], ['MS', 'Mississippi', 40, 42],
+      ['MO', 'Missouri', 44, 24], ['MT', 'Montana', 20, 6], ['NE', 'Nebraska', 40, 18], ['NV', 'Nevada', 16, 30],
+      ['NH', 'New Hampshire', 64, 48], ['NJ', 'New Jersey', 60, 52], ['NM', 'New Mexico', 24, 24], ['NY', 'New York', 60, 42],
+      ['NC', 'North Carolina', 56, 42], ['ND', 'North Dakota', 40, 6], ['OH', 'Ohio', 56, 24], ['OK', 'Oklahoma', 32, 30],
+      ['OR', 'Oregon', 4, 24], ['PA', 'Pennsylvania', 56, 36], ['RI', 'Rhode Island', 64, 54], ['SC', 'South Carolina', 56, 48],
+      ['SD', 'South Dakota', 44, 12], ['TN', 'Tennessee', 48, 30], ['TX', 'Texas', 24, 36], ['UT', 'Utah', 20, 24],
+      ['VT', 'Vermont', 64, 42], ['VA', 'Virginia', 56, 42], ['WA', 'Washington', 4, 12], ['WV', 'West Virginia', 56, 36],
+      ['WI', 'Wisconsin', 52, 12], ['WY', 'Wyoming', 28, 12]
+    ];
+
+    const maxCount = Math.max(...Object.values(stateCounts).map(d => d.Total));
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 70 72');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '400px');
+    svg.style.marginBottom = '16px';
+
+    US_STATES.forEach(([code, name, x, y]) => {
+      const count = stateCounts[code]?.Total || 0;
+      const pct = count / maxCount;
+
+      const hue = 210 - (pct * 90);
+      const bgColor = count === 0 ? 'var(--empty)' : `hsl(${hue}, 70%, ${65 - pct * 30}%)`;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.style.cursor = 'pointer';
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', 6);
+      rect.setAttribute('height', 6);
+      rect.setAttribute('rx', 1);
+      rect.setAttribute('fill', bgColor);
+      rect.setAttribute('stroke', 'var(--line)');
+      rect.setAttribute('stroke-width', 0.5);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', x + 3);
+      text.setAttribute('y', y + 3.8);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', 2.2);
+      text.setAttribute('font-weight', 600);
+      text.setAttribute('fill', 'var(--ink)');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = code;
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = `${name}: ${count} polic${count === 1 ? 'y' : 'ies'}`;
+
+      g.appendChild(rect);
+      g.appendChild(text);
+      g.appendChild(title);
+
+      g.addEventListener('click', () => {
+        state.sel = code;
+        renderPanel();
+        document.querySelector(`#m-ledger tr[data-state="${code}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      svg.appendChild(g);
+    });
+
+    mapDiv.innerHTML = '';
+    mapDiv.appendChild(svg);
+
+    const legend = document.createElement('div');
+    legend.style.fontSize = '11px';
+    legend.style.color = 'var(--muted)';
+    legend.style.marginTop = '12px';
+    legend.innerHTML = `<strong>Policy density by state</strong> • Click a state to filter | Darker = more policies`;
+    mapDiv.appendChild(legend);
+  }
+
+  renderStateMap();
 
   // Render table
   const tbody = document.querySelector('#m-ledger tbody');
