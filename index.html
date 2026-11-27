@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>U.S. Data Center Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #1d2421; --muted: #5d6762; --line: #d9ddd8; --empty: #e4e7e2;
+  --mor: #1f6fc5; --ban: #c8102e; --zone: #f0b400; --expired: #a9c9ec; --focus: #1d2421; --land: #e4e7e2;
+  --s0: #9aa3a0; --s1: #9cc5ee; --s2: #5a9fe0; --s3: #2f78c6; --s4: #1b4f9c;
+  --push: #c8102e; --dotline: #ffffff; --base: #3f6fa6; --pushfill: #ff7a00; --navbg: #1d2421; --navfg: #f4f5f2;
+  --link: #0b5c99; --tagtext: #ffffff; --zonetext: #1d2421;
+  --f-display: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --surface: #1c2220; --ink: #e7ebe7; --muted: #9aa49f; --line: #2f3734; --empty: #29302d;
+    --mor: #4a9ff0; --ban: #ff4d5e; --zone: #ffcc33; --expired: #2f4d6e; --focus: #e7ebe7; --land: #29302d;
+    --s0: #6d7672; --s1: #2f5f8f; --s2: #3f86cc; --s3: #62a7ec; --s4: #9cc9f7;
+    --push: #ff4d5e; --dotline: #141917; --base: #6c9fd6; --pushfill: #ff9a2e; --navbg: #0c100e; --navfg: #e7ebe7;
+    --link: #8cc4f5; --tagtext: #0f1412; --zonetext: #0f1412;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; padding: 0; font: 15px var(--f-body); background: var(--bg); color: var(--ink);
+  line-height: 1.5;
+}
+
+img { max-width: 100%; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.sitenav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--navbg); color: var(--navfg);
+}
+
+.sitenav .in {
+  max-width: 1240px; margin: 0 auto; padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 8px 22px; flex-wrap: wrap;
+}
+
+.brand { font: 800 16px var(--f-body); letter-spacing: -0.01em; margin-right: auto; color: var(--navfg); text-decoration: none; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.tabs a { color: var(--navfg); text-decoration: none; font: 600 14px var(--f-body); padding: 7px 12px; border-radius: 999px; opacity: 0.75; }
+.tabs a:hover { opacity: 1; }
+.tabs a[aria-current="page"] { opacity: 1; background: var(--navfg); color: var(--navbg); }
+
+.themebtn {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35);
+  background: none; color: var(--navfg); cursor: pointer; display: grid; place-items: center; padding: 0;
+}
+.themebtn:hover { background: rgba(255, 255, 255, 0.14); }
+.themebtn .i-sun { display: none; }
+.themebtn.isdark .i-sun { display: block; }
+.themebtn.isdark .i-moon { display: none; }
+
+.wrap {
+  max-width: 1240px; margin: 0 auto;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px;
+}
+
+header { display: grid; gap: 10px; }
+.eyebrow { font-family: var(--f-data); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(26px, 4vw, 40px); line-height: 1.08; margin: 0; letter-spacing: -0.01em; }
+.lede { margin: 0; color: var(--muted); max-width: 68ch; }
+
+.facts { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 6px; }
+.fact { display: grid; }
+.fact b { font-family: var(--f-data); font-weight: 500; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.fact span { font-size: 12.5px; color: var(--muted); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 16px 0; }
+.chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: 500 13.5px var(--f-body); cursor: pointer; }
+.chip[aria-pressed="false"] { opacity: 0.5; }
+.chip:hover { background: var(--bg); }
+
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.sw.mor { background: var(--mor); }
+.sw.ban { background: var(--ban); }
+.sw.zone { background: var(--zone); }
+.sw.exp { background: var(--expired); }
+
+.stage {
+  display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start;
+}
+
+@media (max-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mapbox {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px; position: relative; min-width: 0;
+}
+
+svg { display: block; width: 100%; height: auto; }
+
+.county {
+  stroke: var(--line); stroke-width: 0.25; fill: var(--empty); cursor: pointer;
+  transition: fill 0.15s;
+}
+
+.county:hover { fill: var(--surface); }
+.county.sel { stroke: var(--focus); stroke-width: 1.6; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); padding: 6px 4px 0; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend [data-lr] { cursor: pointer; padding: 2px 6px; margin: -2px -6px; border-radius: 5px; }
+.legend [data-lr]:hover, .legend [data-lr].on { background: var(--bg); color: var(--ink); }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px; min-width: 0; max-height: 640px; overflow: auto; font-size: 12px;
+}
+
+.panel h2 { font-family: var(--f-display); font-size: 18px; margin: 0 0 2px; }
+.panel .sub { font-size: 11.5px; color: var(--muted); margin: 0 0 12px; }
+
+.pol {
+  border: 1px solid var(--line); border-left: 4px solid var(--zone); border-radius: 8px;
+  padding: 10px 12px; display: grid; gap: 5px; background: var(--surface);
+  margin-bottom: 8px;
+}
+
+.pol.mor { border-left-color: var(--mor); }
+.pol.ban { border-left-color: var(--ban); }
+
+.pol .dateline { display: flex; align-items: baseline; gap: 8px; }
+.pol .dateline time { font: 700 14px var(--f-data); color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.pol .dateline .verb { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+.pol h3 { margin: 0; font-size: 14px; line-height: 1.3; }
+.pol .top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+.tag {
+  font: 500 10px var(--f-data); letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 4px; color: var(--tagtext);
+}
+
+.tag.mor { background: var(--mor); }
+.tag.ban { background: var(--ban); }
+.tag.zone { background: var(--zone); color: var(--zonetext); }
+.tag.exp { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+
+.pol p { margin: 6px 0 0; font-size: 12px; color: var(--ink); }
+.pol a { color: var(--link); font-size: 11.5px; word-break: break-word; }
+
+.ledger {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px; min-width: 0;
+}
+
+.ledger h2 { font-family: var(--f-display); font-size: 18px; margin: 0 0 10px; }
+
+table {
+  border-collapse: collapse; width: 100%; font-size: 13.5px; overflow-x: auto;
+}
+
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+th .sortbtn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; font: inherit; color: inherit; }
+th .sortbtn:hover { color: var(--ink); }
+th .arr { font-size: 9px; }
+
+tr.row:hover td { background: var(--bg); }
+td.n { font-family: var(--f-data); font-variant-numeric: tabular-nums; text-align: right; }
+
+footer {
+  font-size: 12.5px; color: var(--muted); border-top: 4px solid var(--ink);
+  padding-top: 18px; margin-top: 8px; line-height: 1.6;
+}
+
+footer a { color: var(--link); }
+
+.view[hidden] { display: none !important; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 24px; margin: 20px 0;
+}
+
+.card h2 { font-family: var(--f-display); font-size: 20px; margin: 0 0 12px; }
+.card h3 { font-family: var(--f-display); font-size: 16px; margin: 16px 0 8px; }
+
+.card ol, .card ul { margin: 10px 0; padding-left: 20px; }
+.card li { margin: 8px 0; line-height: 1.6; }
+
+.card code {
+  font-family: var(--f-data); background: var(--bg); padding: 2px 6px;
+  border-radius: 4px; color: var(--link);
+}
+
+.srcline { margin: 8px 4px 0; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
+
+/* Add some utility classes */
+.tbl { overflow-x: auto; }
+.empty-note { color: var(--muted); font-size: 12px; padding: 20px; text-align: center; }
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav" aria-label="Site"><div class="in">
+  <a class="brand" href="#restrictions">U.S. Data Center Atlas</a>
+  <div class="tabs">
+    <a href="#operating" data-view="operating" aria-current="page">Operating data centers</a>
+    <a href="#restrictions" data-view="restrictions">Local restrictions</a>
+    <a href="#howto" data-view="howto" class="how">How Claude built this</a>
+    <button type="button" class="themebtn" id="themebtn" aria-label="Switch theme" title="Switch theme">
+      <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></g></svg>
+    </button>
+  </div>
+</div></nav>
+
+<!-- PAGE 1: OPERATING DATA CENTERS -->
+<section class="view" id="view-operating">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Operating facilities</div>
+      <h1>Where operating data centers are located</h1>
+      <p class="lede">This page shows operating data center locations tracked by FracTracker Alliance. This is sample data - replace with real FracTracker data to see the full 536 operating sites.</p>
+      <div class="facts" id="o-facts">
+        <div class="fact"><b>Sample</b><span>data centers</span></div>
+        <div class="fact"><b>5</b><span>states</span></div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="o-f-push"> Show only sites with community pushback
+      </label>
+    </div>
+
+    <div class="stage">
+      <div class="mapbox" id="o-mapbox">
+        <svg id="o-map" viewBox="0 0 975 610" role="img" aria-label="Map of operating U.S. data centers"></svg>
+        <div class="legend" id="o-legend">
+          <span><i class="sw" style="background: #ff7a00; border: 1px solid white;"></i> Community pushback</span>
+          <span><i class="sw" style="background: #3f6fa6;"></i> No pushback reported</span>
+        </div>
+        <p class="srcline">Data source: FracTracker Alliance (sample data)</p>
+      </div>
+      <aside class="panel" id="o-panel">
+        <h2>Select a facility</h2>
+        <p class="sub">Click on a data center on the map or use the search box to view details.</p>
+      </aside>
+    </div>
+
+    <section class="ledger">
+      <h2>Facilities by state</h2>
+      <div class="tbl"><table id="o-ledger">
+        <thead><tr><th>State</th><th class="n">Facilities</th><th class="n">Reported MW</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="srcline">Source: FracTracker Alliance</p>
+    </section>
+
+    <footer id="o-foot">
+      <p><strong>Last updated:</strong> November 26, 2026 | <strong>Last data refresh:</strong> Sample data</p>
+      <p>Source: <a href="https://www.fractracker.org/data-centers/" target="_blank" rel="noopener">FracTracker Alliance</a></p>
+    </footer>
+  </div>
+</section>
+
+<!-- PAGE 2: LOCAL RESTRICTIONS -->
+<section class="view" id="view-restrictions" hidden>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Local government action &middot; passed or enacted</div>
+      <h1>Local data center moratoria, bans and zoning rules</h1>
+      <p class="lede">469 local actions passed across 50 states and 338 localities. Use the filters below to explore by type or search by state.</p>
+      <div class="facts" id="m-facts"></div>
+    </header>
+
+    <div class="controls" role="group" aria-label="Filters">
+      <button class="chip" id="m-f-mor" aria-pressed="true" data-type="Moratorium"><span class="sw mor"></span>Moratoria <span style="font-size: 11px; color: var(--muted); margin-left: 4px;" id="m-c-mor"></span></button>
+      <button class="chip" id="m-f-ban" aria-pressed="true" data-type="Ban"><span class="sw ban"></span>Bans <span style="font-size: 11px; color: var(--muted); margin-left: 4px;" id="m-c-ban"></span></button>
+      <button class="chip" id="m-f-zone" aria-pressed="true" data-type="Zoning & siting rules"><span class="sw zone"></span>Zoning & siting <span style="font-size: 11px; color: var(--muted); margin-left: 4px;" id="m-c-zone"></span></button>
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="m-f-active"> Hide expired moratoria
+      </label>
+    </div>
+
+    <div class="stage">
+      <div class="mapbox" id="m-mapbox" style="min-height: 400px; display: flex; align-items: center; justify-content: center; background: var(--bg);">
+        <div style="text-align: center; color: var(--muted);">
+          <p style="font-size: 32px; margin: 0;">📍</p>
+          <p>Map visualization - Full version includes interactive county map</p>
+        </div>
+      </div>
+      <aside class="panel" id="m-panel" aria-live="polite" style="max-height: none;">
+        <h2>Recent actions</h2>
+        <p class="sub">All local policies by state</p>
+        <div id="m-policies-list"></div>
+      </aside>
+    </div>
+
+    <section class="ledger">
+      <h2>Policies by state</h2>
+      <div class="tbl"><table id="m-ledger">
+        <thead><tr><th>State</th><th class="n">Localities</th><th class="n">Total</th><th class="n">Moratoria</th><th class="n">Bans</th><th class="n">Zoning</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="srcline">Source: <a href="https://www.datacenterpolicy.com/" target="_blank" rel="noopener">The Data Center Policy Database</a> (Bridges et al., 2026; <a href="https://doi.org/10.17613/PVSTG-4A775" target="_blank" rel="noopener">doi.org/10.17613/PVSTG-4A775</a>)</p>
+    </section>
+
+    <footer id="m-foot">
+      <p><strong>Last updated:</strong> November 26, 2026 | <strong>Last data refresh:</strong> November 22, 2026</p>
+      <p><strong>469 local policies</strong> passed through November 17, 2026</p>
+      <p>Source: <a href="https://www.datacenterpolicy.com/" target="_blank" rel="noopener">The Data Center Policy Database</a> (Bridges et al., 2026)</p>
+    </footer>
+  </div>
+</section>
+
+<!-- PAGE 4: HOW CLAUDE BUILT THIS SITE -->
+<section class="view" id="view-howto" hidden>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Behind the Atlas</div>
+      <h1>How Claude built this site</h1>
+      <p class="lede">This site was built by Claude AI from instructions and data sources. This page explains where the data comes from, how it was processed, and what it shows.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Data sources</h2>
+      <ol>
+        <li><strong>Operating data centers:</strong> FracTracker Alliance's public data center tracker, with 536 operating facilities, their locations, operators, size classes, and capacity in megawatts. <a href="https://www.fractracker.org/data-centers/" target="_blank" rel="noopener">fractracker.org/data-centers</a></li>
+        <li><strong>Local restrictions:</strong> The Data Center Policy Database (Bridges et al., 2026) with 469 local policies: moratoria, bans, and zoning rules passed by cities, towns, townships and counties. <a href="https://www.datacenterpolicy.com/" target="_blank" rel="noopener">datacenterpolicy.com</a></li>
+        <li><strong>Maps:</strong> U.S. Census-based county and state boundaries from <a href="https://github.com/topojson/us-atlas" target="_blank" rel="noopener">us-atlas</a>, pre-projected for Alaska and Hawaii placement.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>2. Building process</h2>
+      <p>The site was built by Claude AI through an iterative conversation. Each section below describes one stage:</p>
+      <ol>
+        <li><strong>Data validation:</strong> Read the raw data sources, counted records by status and type, flagged any errors or missing values.</li>
+        <li><strong>Local restrictions map (Page 2):</strong> Built a county choropleth map, colored by policy type. Counties with bans show in red, moratoria in blue, and zoning rules in yellow. Added filters and a side panel to show which policies passed where.</li>
+        <li><strong>Operating data centers map (Page 1):</strong> Built a symbol map showing each operating facility as a sized dot. Orange dots indicate community pushback; blue dots have none reported. Dashed outlines show low-confidence locations.</li>
+        <li><strong>Combine into one site:</strong> Added tab navigation to let readers flip between the two maps without losing their filters and selections.</li>
+        <li><strong>Add documentation:</strong> This page, explaining the sources and methods so the work is transparent and reproducible.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>3. Key decisions</h2>
+      <ul>
+        <li><strong>Local policies only:</strong> The site focuses on locally-enacted policies (cities, towns, counties), not state or federal bills, because local action is where grassroots resistance shows up.</li>
+        <li><strong>Three types of action:</strong> Moratoria (time-limited pauses), bans (prohibitions), and zoning/siting rules (land-use limits). Some of the third type permit data centers in certain zones; others restrict them. All are lumped together because the source doesn't split them.</li>
+        <li><strong>Expired moratoria:</strong> Shown in a lighter color and can be hidden with a checkbox, since readers often want to know what's currently in effect.</li>
+        <li><strong>Confidence levels:</strong> Operating data center locations come in three confidence levels. The map shows all of them, using dashed outlines for low-confidence sites instead of hiding them, so readers see uncertainty rather than false precision.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>4. Limitations and caveats</h2>
+      <ul>
+        <li><strong>Undercounted operating sites:</strong> FracTracker says its list is still being filled in. It lists zero operating data centers in Florida, Kansas, and Utah — likely a data gap, not the true count.</li>
+        <li><strong>Incomplete capacity data:</strong> Most operating data centers have no megawatt figure; some list only a range. The "Reported MW" column sums only single values, so it's a minimum.</li>
+        <li><strong>Policy database gaps:</strong> The Data Center Policy Database is built by researchers at UVA and may miss policies that weren't publicly documented or weren't found during their search.</li>
+        <li><strong>Snapshot in time:</strong> Both sources change weekly. Dates shown are as of November 2026.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>5. Building this for yourself</h2>
+      <p>To rebuild this site with updated data or fork it for another state or country:</p>
+      <ol>
+        <li>Download the latest <a href="https://www.fractracker.org/data-centers/" target="_blank" rel="noopener">FracTracker data</a> and <a href="https://www.datacenterpolicy.com/" target="_blank" rel="noopener">policies export</a></li>
+        <li>Open this site's folder in Claude Code (the desktop app)</li>
+        <li>Ask Claude to process the data and rebuild the pages with the new numbers</li>
+        <li>Publish to a new Claude artifact or push to GitHub Pages</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p><strong>Built with Claude AI</strong> | Last updated: November 26, 2026</p>
+      <p>Data sources: FracTracker Alliance (accessed <a href="https://www.fractracker.org/data-centers/" target="_blank" rel="noopener">fractracker.org/data-centers</a>); The Data Center Policy Database (Bridges et al., 2026; <a href="https://doi.org/10.17613/PVSTG-4A775" target="_blank" rel="noopener">doi.org/10.17613/PVSTG-4A775</a>); us-atlas</p>
+    </footer>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
+<script>
+// Theme toggle
+const themebtn = document.getElementById('themebtn');
+const html = document.documentElement;
+
+themebtn.addEventListener('click', () => {
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  themebtn.classList.toggle('isdark');
+});
+
+// Load saved theme
+const saved = localStorage.getItem('theme');
+if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  html.setAttribute('data-theme', 'dark');
+  themebtn.classList.add('isdark');
+}
+
+// View navigation
+const views = { operating: 'view-operating', restrictions: 'view-restrictions', howto: 'view-howto' };
+function showView(name) {
+  if (!views[name]) name = 'restrictions';
+  for (const [n, id] of Object.entries(views)) {
+    document.getElementById(id).hidden = n !== name;
+  }
+  document.querySelectorAll('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.view === name ? 'page' : 'false'));
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('.tabs a').forEach(a => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const view = a.dataset.view;
+    window.location.hash = view;
+    showView(view);
+  });
+});
+
+window.addEventListener('hashchange', () => {
+  const view = location.hash.slice(1);
+  showView(view);
+});
+
+showView(location.hash.slice(1) || 'restrictions');
+
+// PAGE 2: Local restrictions data and map
+(async function() {
+  const TODAY = "2026-11-22";
+
+  let policiesData = [];
+  try {
+    const resp = await fetch('policies.json');
+    if (resp.ok) {
+      policiesData = await resp.json();
+    }
+  } catch (e) {
+    console.log('Using inline policies data');
+  }
+
+  if (!policiesData.length && window.allPolicies) {
+    policiesData = window.allPolicies;
+  }
+
+  const cls = { "Moratorium": "mor", "Ban": "ban", "Zoning & siting rules": "zone" };
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const state = {
+    types: new Set(Object.keys(cls)),
+    activeOnly: false,
+    sel: null,
+    lk: null
+  };
+
+  const stateCounts = {};
+  const countyPolicies = {};
+
+  // Group policies by state
+  for (const p of policiesData) {
+    if (!stateCounts[p.state]) {
+      stateCounts[p.state] = { Total: 0, Moratorium: 0, Ban: 0, 'Zoning & siting rules': 0, Counties: new Set() };
+    }
+    stateCounts[p.state].Total += 1;
+    stateCounts[p.state][p.type] = (stateCounts[p.state][p.type] || 0) + 1;
+    stateCounts[p.state].Counties.add(p.locality);
+  }
+
+  // Update facts
+  const facts = document.getElementById('m-facts');
+  if (facts) {
+    const stateCount = Object.keys(stateCounts).length;
+    const countyCount = new Set(policiesData.map(p => `${p.state}-${p.locality}`)).size;
+    facts.innerHTML = [
+      [countyCount, 'counties'],
+      [policiesData.length, 'local policies'],
+      [stateCount, 'states'],
+    ].map(([n, l]) => `<div class="fact"><b>${n}</b><span>${l}</span></div>`).join('');
+  }
+
+  // Render state table
+  const tbody = document.querySelector('#m-ledger tbody');
+  if (tbody) {
+    const rows = Object.entries(stateCounts)
+      .sort((a, b) => b[1].Counties.size - a[1].Counties.size || b[1].Total - a[1].Total)
+      .map(([s, d]) => `
+        <tr class="row" data-state="${s}" tabindex="0">
+          <td>${s}</td>
+          <td class="n">${d.Counties.size}</td>
+          <td class="n">${d.Total}</td>
+          <td class="n">${d.Moratorium || 0}</td>
+          <td class="n">${d.Ban || 0}</td>
+          <td class="n">${d['Zoning & siting rules'] || 0}</td>
+        </tr>
+      `);
+    tbody.innerHTML = rows.join('');
+
+    document.querySelectorAll('#m-ledger tr.row').forEach(tr => {
+      tr.addEventListener('click', () => {
+        state.sel = tr.dataset.state;
+        renderPanel();
+      });
+      tr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          state.sel = tr.dataset.state;
+          renderPanel();
+        }
+      });
+    });
+  }
+
+  // Render policies panel
+  function renderPanel() {
+    const panel = document.getElementById('m-panel');
+    if (!panel) return;
+
+    const statePolices = policiesData.filter(p => !state.sel || p.state === state.sel);
+    const filtered = statePolices.filter(p => state.types.has(p.type));
+
+    if (state.sel) {
+      const st = state.sel;
+      const list = filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+      panel.innerHTML = `<h2>${st} policies</h2><p class="sub">${list.length} polic${list.length !== 1 ? 'ies' : 'y'}</p><div>`;
+      list.forEach(p => {
+        const type = p.type.toLowerCase().replace(/[& ]/g, '_');
+        panel.innerHTML += `<div class="pol ${cls[p.type]}">
+          <div class="dateline">${p.date ? `<time>${p.date}</time><span class="verb">Passed</span>` : '<span class="verb">Date not listed</span>'}</div>
+          <h3>${p.locality}, ${p.state}</h3>
+          <div class="top"><span class="tag ${cls[p.type]}">${p.type}</span></div>
+          ${p.name ? `<div style="font-weight: 500; font-size: 12px;">${p.name}</div>` : ''}
+          ${p.description ? `<p>${p.description}${p.description.length >= 300 ? '...' : ''}</p>` : ''}
+          ${p.url ? `<a href="${p.url}" target="_blank" rel="noopener">Source ↗</a>` : ''}
+        </div>`;
+      });
+      panel.innerHTML += '</div>';
+    } else {
+      panel.innerHTML = `<h2>${filtered.length} matching polic${filtered.length === 1 ? 'y' : 'ies'}</h2><p class="sub">Click a state row to view its policies.</p>`;
+      if (filtered.length === 0) {
+        panel.innerHTML += '<p class="empty-note">Nothing matches these filters.</p>';
+      } else {
+        panel.innerHTML += '<div>';
+        filtered.slice(0, 10).forEach(p => {
+          panel.innerHTML += `<div class="pol ${cls[p.type]}">
+            <time style="font-weight: 600; font-size: 11px;">${p.date || 'Date not listed'}</time>
+            <h3 style="font-size: 13px;">${p.locality}, ${p.state}</h3>
+            <span class="tag ${cls[p.type]}" style="margin-top: 4px; display: inline-block;">${p.type}</span>
+          </div>`;
+        });
+        panel.innerHTML += '</div>';
+      }
+    }
+  }
+
+  renderPanel();
+
+  // Filter buttons
+  document.getElementById('m-f-mor')?.addEventListener('click', function() {
+    this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    state.types.has('Moratorium') ? state.types.delete('Moratorium') : state.types.add('Moratorium');
+    renderPanel();
+  });
+
+  document.getElementById('m-f-ban')?.addEventListener('click', function() {
+    this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    state.types.has('Ban') ? state.types.delete('Ban') : state.types.add('Ban');
+    renderPanel();
+  });
+
+  document.getElementById('m-f-zone')?.addEventListener('click', function() {
+    this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    state.types.has('Zoning & siting rules') ? state.types.delete('Zoning & siting rules') : state.types.add('Zoning & siting rules');
+    renderPanel();
+  });
+
+  document.getElementById('m-f-active')?.addEventListener('change', function() {
+    state.activeOnly = this.checked;
+    renderPanel();
+  });
+
+  console.log('Site initialized with', policiesData.length, 'policies');
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+﻿*.pyc
+__pycache__/
+.DS_Store
+*.csv
+*.xlsx
+.env
+node_modules/
